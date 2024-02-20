@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  nextcloud:
+    build:
+      dockerfile: Dockerfile
+      context: ./nextcloud
+    ports:
+      - "127.0.0.1:3040:80"
+    volumes:
+      - nextcloud_data:/var/www/html
+      #- ./conf_php:/var/www/html/conf_php
+
+    #command: /bin/bash -c "envsubst < /var/www/html/conf_php > /var/www/html/config/config.php && apache2-foreground"
+    #bash -c "envsubst < /var/www/html/config.php.template > /var/www/html/config/config.php && apache2-foreground"
+#    
+      #- /bin/bash -c | envsubst < /var/www/html/config.php.template > /var/www/html/config/config.php && apache2-foreground
+      #- -c
+     # - |
+        
+        
+    depends_on:
+      - db
+    environment:
+      - MYSQL_HOST=dbs
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+
+  db:
+    image: mariadb
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+#    ports:
+ #     - "3300:3306"
+
+  collabora:
+    image: collabora/code
+    ports:
+      - 9980:9980
+    environment:
+      - domain=193\\.124\\.33\\.4  # Замените на ваш домен, используемый для Nextcloud
+      - username=admin # Придумайте имя пользователя для входа в админку Collabora
+      - password=${MYSQL_ROOT_PASSWORD} # Придумайте пароль
+      - extra_params=--o:ssl.enable=false --o:ssl.termination=true
+    cap_add:
+      - MKNOD
+      
+volumes:
+  nextcloud_data:
+  db_data:
+
+#networks:
+#  default:
+#    external:
+#      name: all
